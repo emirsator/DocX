@@ -2925,11 +2925,69 @@ namespace Xceed.Words.NET
       _settings.Root.AddFirst( documentProtection );
     }
 
-    #endregion
+    public void InsertHtml(string content)
+    {
+      string altChunkId = "";
+      
+      // Create a new html part uri.
+      var htmlPartUriPath = String.Empty;
+      var htmlIndex = 1;
+      do
+      {
+          htmlPartUriPath = String.Format("/word/afchunks/afchunk{0}.html", htmlIndex);
+          altChunkId = $"altChunk{htmlIndex}";
+          htmlIndex++;
+      } while (_package.PartExists(new Uri(htmlPartUriPath, UriKind.Relative)));
+      
+      // Create html part.
+      var htmlPackagePart = _package.CreatePart(new Uri(htmlPartUriPath, UriKind.Relative), "application/xhtml+xml");
+      
+      // Create a new html relationship
+      this.PackagePart.CreateRelationship(htmlPackagePart.Uri, TargetMode.Internal, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk", altChunkId);
+      
+      using (Stream chunkStream = htmlPackagePart.GetStream(FileMode.Create, FileAccess.Write))
+      using (StreamWriter stringStream = new StreamWriter(chunkStream))
+          stringStream.Write(content);
+      
+      var afChunkElement = new XElement(XName.Get("altChunk", w.NamespaceName), new XAttribute(XName.Get("id", r.NamespaceName), altChunkId));
+      
+      var p = InsertParagraph();
+      p.Xml.AddBeforeSelf(afChunkElement);
+    }
 
-    #region Internal Methods
+    public void InsertHtml(string content, Paragraph p)
+    {
+      string altChunkId = "";
+      
+      // Create a new html part uri.
+      var htmlPartUriPath = String.Empty;
+      var htmlIndex = 1;
+      do
+      {
+          htmlPartUriPath = String.Format("/word/afchunks/afchunk{0}.html", htmlIndex);
+          altChunkId = $"altChunk{htmlIndex}";
+          htmlIndex++;
+      } while (_package.PartExists(new Uri(htmlPartUriPath, UriKind.Relative)));
+      
+      // Create html part.
+      var htmlPackagePart = _package.CreatePart(new Uri(htmlPartUriPath, UriKind.Relative), "application/xhtml+xml");
+      
+      // Create a new html relationship
+      this.PackagePart.CreateRelationship(htmlPackagePart.Uri, TargetMode.Internal, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk", altChunkId);
+      
+      using (Stream chunkStream = htmlPackagePart.GetStream(FileMode.Create, FileAccess.Write))
+      using (StreamWriter stringStream = new StreamWriter(chunkStream))
+          stringStream.Write(content);
+      
+      var afChunkElement = new XElement(XName.Get("altChunk", w.NamespaceName), new XAttribute(XName.Get("id", r.NamespaceName), altChunkId));
+      
+      p.Xml.AddBeforeSelf(afChunkElement);
+    }
+        #endregion
 
-    internal float getMarginAttribute( XName name )
+        #region Internal Methods
+
+        internal float getMarginAttribute( XName name )
     {
       var body = _mainDoc.Root.Element( XName.Get( "body", w.NamespaceName ) );
       var sectPr = body.Element( XName.Get( "sectPr", w.NamespaceName ) );
